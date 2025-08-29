@@ -2,30 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>4HM Jank-O-Meter</title>
 
-  <!-- Data + table libs -->
+  <!-- Data & table libs -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"/>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
   <style>
-    :root { --bg:#fdf6e3; --card:#f9f2dd; --ink:#2b1a08; --muted:#7c6a4c; --brand:#b63; }
-    html,body {
+    :root { --bg:#fdf6e3; --card:#f9f2dd; --ink:#2b1a08; --muted:#7c6a4c; }
+
+    html, body {
       margin:0; padding:0;
       background:#fdf6e3;
       color:var(--ink);
       font:16px/1.5 "Book Antiqua", Palatino, serif;
       background-image: radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
       border:40px solid transparent;
-      border-image: url('https://i.imgur.com/vK5wZyH.png') 100 repeat; /* parchment scroll texture */
+      /* parchment scroll border texture (public HTTPS image) */
+      border-image: url('https://i.imgur.com/vK5wZyH.png') 100 repeat;
       min-height:100vh;
       box-sizing:border-box;
     }
 
-    /* Watermark logo */
+    /* Watermark logo (faint 4HM logo in the background) */
     body::after {
       content:"";
       position:fixed;
@@ -41,7 +43,7 @@
     /* Header parchment scroll */
     header {
       background:#fdf6e3;
-      background-image:radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
+      background-image: radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
       border-bottom:4px solid #d6b87a;
       border-top:4px solid #d6b87a;
       box-shadow:0 4px 12px rgba(0,0,0,0.4);
@@ -67,51 +69,76 @@
     .panel { background:var(--card); border-radius:16px; padding:18px; box-shadow:0 6px 20px rgba(0,0,0,.25); }
     .controls { display:grid; gap:12px; grid-template-columns: 1fr; align-items:center; }
     .row { display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
-    .pill { background:#f2e6c6; border:1px solid #c8a96c; color:var(--ink); padding:8px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:10px; }
+    .pill {
+      background:#f2e6c6; border:1px solid #c8a96c; color:var(--ink);
+      padding:8px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:10px;
+    }
 
-    /* Brass slider + number input */
+    /* Brass slider (CROSS-BROWSER) */
     input[type="range"] {
-      -webkit-appearance:none;
-      width:260px;
-      height:8px;
-      border-radius:5px;
-      background:linear-gradient(to right, #d6b87a, #b38b4d);
-      outline:none;
-      margin:0 8px;
+      -webkit-appearance: none !important;
+      appearance: none !important;
+      width: 260px;
+      height: 10px;
+      border-radius: 5px;
+      background: linear-gradient(to right, #d6b87a, #b38b4d);
+      outline: none;
+      margin: 0 8px;
+      cursor: pointer;
+      border: 1px solid #8b5a2b;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.4);
     }
+    /* Chrome/Safari/Edge */
     input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance:none;
-      width:20px; height:20px;
-      border-radius:50%;
-      background:#8b5a2b;
-      border:2px solid #5c3b16;
-      box-shadow:inset 0 0 4px #d6b87a;
-      cursor:pointer;
+      -webkit-appearance: none !important;
+      appearance: none !important;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #d6b87a, #8b5a2b);
+      border: 2px solid #5c3b16;
+      box-shadow: inset 0 0 6px #d6b87a, 0 0 2px #000;
+      cursor: pointer;
+      transition: transform .05s ease-in-out;
     }
+    input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.05); }
+    /* Firefox */
     input[type="range"]::-moz-range-thumb {
-      width:20px; height:20px;
-      border-radius:50%;
-      background:#8b5a2b;
-      border:2px solid #5c3b16;
-      box-shadow:inset 0 0 4px #d6b87a;
-      cursor:pointer;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #d6b87a, #8b5a2b);
+      border: 2px solid #5c3b16;
+      box-shadow: inset 0 0 6px #d6b87a, 0 0 2px #000;
+      cursor: pointer;
+      transition: transform .05s ease-in-out;
+    }
+    input[type="range"]:active::-moz-range-thumb { transform: scale(1.05); }
+    /* IE/Edge legacy */
+    input[type="range"]::-ms-thumb {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #d6b87a, #8b5a2b);
+      border: 2px solid #5c3b16;
+      box-shadow: inset 0 0 6px #d6b87a, 0 0 2px #000;
+      cursor: pointer;
     }
 
+    /* Matching number input */
     #thresholdNumber {
-      width:90px;
-      background:#fff9e6;
-      color:#2b1a08;
-      border:2px solid #c8a96c;
-      border-radius:8px;
-      padding:6px 8px;
-      font-family:'Book Antiqua', Palatino, serif;
-      box-shadow:inset 0 0 5px #d6b87a;
+      width: 90px;
+      background: #fff9e6;
+      color: #2b1a08;
+      border: 2px solid #c8a96c;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-family: 'Book Antiqua', Palatino, serif;
+      box-shadow: inset 0 0 5px #d6b87a;
     }
 
     .muted { color:var(--muted); font-size:13px; }
     .kpi { font-weight:700; color:#8b4513; }
     .actions { margin-left:auto; display:flex; gap:10px; }
-    .btn { background:#fdf6e3; border:1px solid #c8a96c; color:#3a240a; padding:8px 12px; border-radius:10px; cursor:pointer; font-family:"Book Antiqua", Palatino, serif; }
+    .btn {
+      background:#fdf6e3; border:1px solid #c8a96c; color:#3a240a;
+      padding:8px 12px; border-radius:10px; cursor:pointer;
+      font-family:"Book Antiqua", Palatino, serif;
+    }
     .btn:hover { background:#f8edd4; }
 
     /* Table parchment skin */
@@ -128,24 +155,16 @@
       border-bottom:2px solid #d6b87a;
     }
     table.dataTable tbody tr:nth-child(even) { background:#fbf2de; }
-    table.dataTable tbody tr:nth-child(odd) { background:#f6ebd2; }
+    table.dataTable tbody tr:nth-child(odd)  { background:#f6ebd2; }
     table.dataTable tbody td { color:#2b1a08; }
-    
     a, a:visited { color:#7a3e00; }
 
-    /* Old-school parchment styling for About box */
+    /* About box parchment */
     #about {
-      margin-top:20px;
-      font-size:14px;
-      line-height:1.5;
-      color:#2b1a08;
-      background:#fdf6e3;
-      border:2px solid #d6b87a;
-      border-radius:12px;
-      padding:16px;
-      box-shadow:inset 0 0 12px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.25);
-      font-family:"Book Antiqua", Palatino, serif;
-      background-image:radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
+      margin-top:20px; font-size:14px; line-height:1.5; color:#2b1a08;
+      background:#fdf6e3; border:2px solid #d6b87a; border-radius:12px; padding:16px;
+      box-shadow: inset 0 0 12px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.25);
+      background-image: radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
     }
     #about b { color:#3a240a; }
     #about a { color:#7a3e00; font-weight:600; }
@@ -162,20 +181,20 @@
     <div class="panel">
       <div class="controls">
         <div class="row">
-          <div class="pill">
+          <div class="pill" title="Set the maximum total appearances to include">
             <span>Threshold ≤ <span id="thresholdLabel" class="kpi">…</span></span>
-            <input id="threshold" type="range" min="0" max="100" value="50" step="1" />
-            <input id="thresholdNumber" type="number" min="0" max="100" value="50" step="1" />
+            <input id="threshold" type="range" min="0" max="100" value="50" step="1"/>
+            <input id="thresholdNumber" type="number" min="0" max="100" value="50" step="1" title="Type an exact threshold"/>
           </div>
-          <div class="pill">
+          <div class="pill" title="Filter results by set">
             <label for="setFilter" class="muted">Filter by Set:</label>
-            <select id="setFilter" style="background:#fff9e6; color:#2b1a08; border:1px solid #c8a96c; border-radius:8px; padding:6px 8px; font-family:'Book Antiqua', Palatino, serif;">
+            <select id="setFilter" style="background:#fff9e6; color:#2b1a08; border:1px solid #c8a96c; border-radius:8px; padding:6px 8px;">
               <option value="">All Sets</option>
             </select>
           </div>
           <div class="actions">
-            <button id="exportBtn" class="btn">Export CSV</button>
-            <button id="copyLinkBtn" class="btn">Copy Sharable Link</button>
+            <button id="exportBtn" class="btn" title="Download the current jank list as CSV">Export CSV</button>
+            <button id="copyLinkBtn" class="btn" title="Copy a sharable link with your current settings">Copy Sharable Link</button>
           </div>
         </div>
         <div class="muted" id="meta">Loading data…</div>
@@ -195,20 +214,23 @@
         </thead>
         <tbody></tbody>
       </table>
+
       <div id="about">
         <p><b>About Jank-O-Meter:</b> This tool defines <i>Jank</i> as any legal 4HM card that has appeared in tournament decks fewer times than the chosen threshold. Adjust the slider to reveal the deepest jank of the format.</p>
-        <p>📊 <b>Data Source:</b> <a href="https://docs.google.com/spreadsheets/d/1hrPpYnM7QcIL8IEz03ZZn0cUiRIAtAaBIRk1g6ru-1s/edit?usp=sharing" target="_blank">4HM Tournament Card Usage Sheet</a> (Google Sheets, live CSV).</p>
+        <p>📊 <b>Data Source:</b> <a href="https://docs.google.com/spreadsheets/d/1hrPpYnM7QcIL8IEz03ZZn0cUiRIAtAaBIRk1g6ru-1s/edit?usp=sharing" target="_blank" rel="noopener">4HM Tournament Card Usage Sheet</a> (Google Sheets, live CSV).</p>
         <p id="lastUpdated">⏱️ <b>Last updated:</b> …</p>
       </div>
     </div>
   </div>
 
   <script>
+    // Live CSV published from Google Sheets
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8EjG79BHZiJz5qpnb8cMTN3R_3j_pbKlNODR3iggZhSF9VaKjjWNRle6DVkqGMBOlo0YyoTbW7vjX/pub?gid=0&single=true&output=csv";
 
     let allRows = [];
     let dataTable = null;
 
+    // read query params (for sharable links)
     const params = new URLSearchParams(location.search);
     const qThreshold = params.get('max');
     const qSet = params.get('set');
@@ -236,8 +258,10 @@
         renderTable(initial, qSet);
 
         const uniques = new Set(allRows.map(r => `${r.set}||${r.card}`)).size;
-        document.getElementById('meta').textContent = `Loaded ${allRows.length.toLocaleString()} rows (${uniques.toLocaleString()} unique cards). Max Total = ${maxTotal.toLocaleString()}.`;
-        document.getElementById('lastUpdated').innerHTML = `⏱️ <b>Last updated:</b> ${new Date().toLocaleString()}`;
+        document.getElementById('meta').textContent =
+          `Loaded ${allRows.length.toLocaleString()} rows (${uniques.toLocaleString()} unique cards). Max Total = ${maxTotal.toLocaleString()}.`;
+        document.getElementById('lastUpdated').innerHTML =
+          `⏱️ <b>Last updated:</b> ${new Date().toLocaleString()}`;
       },
       error: (err) => {
         document.getElementById('meta').textContent = `Error loading CSV: ${err}`;
@@ -266,7 +290,7 @@
       };
 
       slider.addEventListener('input', e => sync(e.target.value));
-      box.addEventListener('input', e => sync(e.target.value));
+      box.addEventListener('input',   e => sync(e.target.value));
 
       document.getElementById('setFilter').addEventListener('change', () => {
         const v = Number(slider.value);
@@ -285,7 +309,7 @@
         const opt = document.createElement('option');
         opt.value = s; opt.textContent = s; sel.appendChild(opt);
       });
-      if (qSet) sel.value = qSet;
+      if (params.get('set')) sel.value = params.get('set');
     }
 
     function renderTable(threshold, setFilter){
@@ -306,7 +330,7 @@
         order: [[4, 'asc'], [0, 'asc'], [1, 'asc']],
         pageLength: 25,
         deferRender: true,
-        dom: 'tip',
+        dom: 'tip' // table + info + pagination
       });
     }
 
@@ -319,4 +343,25 @@
       const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `4HM-jank-threshold-${v}${set?`-${set.replace(/\s+/g
+      a.download = `4HM-jank-threshold-${v}${set?`-${set.replace(/\s+/g,'_')}`:''}.csv`;
+      a.click();
+    }
+
+    function updateQuery(max, set){
+      const url = new URL(location.href);
+      if (max != null) url.searchParams.set('max', String(max));
+      if (set) url.searchParams.set('set', set); else url.searchParams.delete('set');
+      history.replaceState(null, '', url);
+    }
+
+    async function copySharableLink(){
+      try {
+        await navigator.clipboard.writeText(location.href);
+        alert('Sharable link copied to clipboard!');
+      } catch(e){
+        alert('Copy failed. You can manually copy the URL from the address bar.');
+      }
+    }
+  </script>
+</body>
+</html>
