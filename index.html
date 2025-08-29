@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>4HM Jank-O-Meter</title>
 
-  <!-- Data & table libs -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"/>
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <!-- Data & table libs (use defer to avoid race conditions) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" defer crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js" defer></script>
 
   <style>
     :root { --bg:#fdf6e3; --card:#f9f2dd; --ink:#2b1a08; --muted:#7c6a4c; }
@@ -21,7 +21,7 @@
       font:16px/1.5 "Book Antiqua", Palatino, serif;
       background-image: radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
       border:40px solid transparent;
-      /* parchment scroll border texture (public HTTPS image) */
+      /* parchment scroll border texture */
       border-image: url('https://i.imgur.com/vK5wZyH.png') 100 repeat;
       min-height:100vh;
       box-sizing:border-box;
@@ -35,140 +35,59 @@
       transform:translate(-50%, -50%);
       width:600px; height:600px;
       background:url('https://i.imgur.com/Vl8m6rM.png') no-repeat center/contain; /* placeholder 4HM logo */
-      opacity:0.07;
-      pointer-events:none;
-      z-index:0;
+      opacity:0.07; pointer-events:none; z-index:0;
     }
 
     /* Header parchment scroll */
     header {
       background:#fdf6e3;
       background-image: radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
-      border-bottom:4px solid #d6b87a;
-      border-top:4px solid #d6b87a;
+      border-bottom:4px solid #d6b87a; border-top:4px solid #d6b87a;
       box-shadow:0 4px 12px rgba(0,0,0,0.4);
-      padding:24px 16px;
-      text-align:center;
-      font-family:"Book Antiqua", Palatino, serif;
-      position:relative;
-      z-index:1;
+      padding:24px 16px; text-align:center;
+      font-family:"Book Antiqua", Palatino, serif; position:relative; z-index:1;
     }
-    header h1 {
-      margin:0;
-      font-size:32px;
-      color:#3a240a;
-      text-shadow:1px 1px 0 #fff;
-    }
-    header .sub {
-      margin-top:6px;
-      font-size:15px;
-      color:#5a3816;
-    }
+    header h1 { margin:0; font-size:32px; color:#3a240a; text-shadow:1px 1px 0 #fff; }
+    header .sub { margin-top:6px; font-size:15px; color:#5a3816; }
 
     .wrap { max-width:1100px; margin:20px auto 60px; padding:0 16px; position:relative; z-index:1; }
     .panel { background:var(--card); border-radius:16px; padding:18px; box-shadow:0 6px 20px rgba(0,0,0,.25); }
     .controls { display:grid; gap:12px; grid-template-columns: 1fr; align-items:center; }
     .row { display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
-    .pill {
-      background:#f2e6c6; border:1px solid #c8a96c; color:var(--ink);
-      padding:8px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:10px;
-    }
+    .pill { background:#f2e6c6; border:1px solid #c8a96c; color:var(--ink); padding:8px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:10px; }
 
-    /* Brass slider (CROSS-BROWSER) */
-    input[type="range"] {
-      -webkit-appearance: none !important;
-      appearance: none !important;
-      width: 260px;
-      height: 10px;
-      border-radius: 5px;
-      background: linear-gradient(to right, #d6b87a, #b38b4d);
-      outline: none;
-      margin: 0 8px;
-      cursor: pointer;
-      border: 1px solid #8b5a2b;
-      box-shadow: inset 0 0 4px rgba(0,0,0,0.4);
-    }
-    /* Chrome/Safari/Edge */
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none !important;
-      appearance: none !important;
-      width: 20px; height: 20px; border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #d6b87a, #8b5a2b);
-      border: 2px solid #5c3b16;
-      box-shadow: inset 0 0 6px #d6b87a, 0 0 2px #000;
-      cursor: pointer;
-      transition: transform .05s ease-in-out;
-    }
-    input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.05); }
-    /* Firefox */
-    input[type="range"]::-moz-range-thumb {
-      width: 20px; height: 20px; border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #d6b87a, #8b5a2b);
-      border: 2px solid #5c3b16;
-      box-shadow: inset 0 0 6px #d6b87a, 0 0 2px #000;
-      cursor: pointer;
-      transition: transform .05s ease-in-out;
-    }
-    input[type="range"]:active::-moz-range-thumb { transform: scale(1.05); }
-    /* IE/Edge legacy */
-    input[type="range"]::-ms-thumb {
-      width: 20px; height: 20px; border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #d6b87a, #8b5a2b);
-      border: 2px solid #5c3b16;
-      box-shadow: inset 0 0 6px #d6b87a, 0 0 2px #000;
-      cursor: pointer;
-    }
+    /* Brass slider (cross‑browser, hardened) */
+    input[type="range"] { -webkit-appearance:none !important; appearance:none !important; width:260px; height:10px; border-radius:5px; background:linear-gradient(to right, #d6b87a, #b38b4d); outline:none; margin:0 8px; cursor:pointer; border:1px solid #8b5a2b; box-shadow:inset 0 0 4px rgba(0,0,0,.4); }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none !important; appearance:none !important; width:20px; height:20px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #d6b87a, #8b5a2b); border:2px solid #5c3b16; box-shadow:inset 0 0 6px #d6b87a, 0 0 2px #000; cursor:pointer; transition:transform .05s ease-in-out; }
+    input[type="range"]:active::-webkit-slider-thumb { transform:scale(1.05); }
+    input[type="range"]::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #d6b87a, #8b5a2b); border:2px solid #5c3b16; box-shadow:inset 0 0 6px #d6b87a, 0 0 2px #000; cursor:pointer; transition:transform .05s ease-in-out; }
+    input[type="range"]:active::-moz-range-thumb { transform:scale(1.05); }
+    input[type="range"]::-ms-thumb { width:20px; height:20px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #d6b87a, #8b5a2b); border:2px solid #5c3b16; box-shadow:inset 0 0 6px #d6b87a, 0 0 2px #000; cursor:pointer; }
 
-    /* Matching number input */
-    #thresholdNumber {
-      width: 90px;
-      background: #fff9e6;
-      color: #2b1a08;
-      border: 2px solid #c8a96c;
-      border-radius: 8px;
-      padding: 6px 8px;
-      font-family: 'Book Antiqua', Palatino, serif;
-      box-shadow: inset 0 0 5px #d6b87a;
-    }
+    #thresholdNumber { width:90px; background:#fff9e6; color:#2b1a08; border:2px solid #c8a96c; border-radius:8px; padding:6px 8px; font-family:'Book Antiqua', Palatino, serif; box-shadow:inset 0 0 5px #d6b87a; }
 
     .muted { color:var(--muted); font-size:13px; }
     .kpi { font-weight:700; color:#8b4513; }
     .actions { margin-left:auto; display:flex; gap:10px; }
-    .btn {
-      background:#fdf6e3; border:1px solid #c8a96c; color:#3a240a;
-      padding:8px 12px; border-radius:10px; cursor:pointer;
-      font-family:"Book Antiqua", Palatino, serif;
-    }
+    .btn { background:#fdf6e3; border:1px solid #c8a96c; color:#3a240a; padding:8px 12px; border-radius:10px; cursor:pointer; font-family:"Book Antiqua", Palatino, serif; }
     .btn:hover { background:#f8edd4; }
 
     /* Table parchment skin */
-    table.dataTable {
-      background:#fdf6e3;
-      border:2px solid #d6b87a;
-      border-radius:12px;
-      overflow:hidden;
-    }
-    table.dataTable thead th {
-      background:#f2e6c6;
-      color:#3a240a;
-      font-weight:bold;
-      border-bottom:2px solid #d6b87a;
-    }
+    table.dataTable { background:#fdf6e3; border:2px solid #d6b87a; border-radius:12px; overflow:hidden; }
+    table.dataTable thead th { background:#f2e6c6; color:#3a240a; font-weight:bold; border-bottom:2px solid #d6b87a; }
     table.dataTable tbody tr:nth-child(even) { background:#fbf2de; }
     table.dataTable tbody tr:nth-child(odd)  { background:#f6ebd2; }
     table.dataTable tbody td { color:#2b1a08; }
     a, a:visited { color:#7a3e00; }
 
     /* About box parchment */
-    #about {
-      margin-top:20px; font-size:14px; line-height:1.5; color:#2b1a08;
-      background:#fdf6e3; border:2px solid #d6b87a; border-radius:12px; padding:16px;
-      box-shadow: inset 0 0 12px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.25);
-      background-image: radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
-    }
+    #about { margin-top:20px; font-size:14px; line-height:1.5; color:#2b1a08; background:#fdf6e3; border:2px solid #d6b87a; border-radius:12px; padding:16px; box-shadow: inset 0 0 12px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.25); background-image: radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1); }
     #about b { color:#3a240a; }
     #about a { color:#7a3e00; font-weight:600; }
     #about a:hover { color:#a75500; }
+
+    /* Inline error banner (for quick diagnosis) */
+    #err { display:none; margin-top:12px; padding:10px 12px; border-radius:10px; background:#ffe6e6; color:#7a0000; border:1px solid #d88; }
   </style>
 </head>
 <body>
@@ -198,6 +117,7 @@
           </div>
         </div>
         <div class="muted" id="meta">Loading data…</div>
+        <div id="err"></div>
       </div>
     </div>
 
@@ -227,46 +147,69 @@
     // Live CSV published from Google Sheets
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8EjG79BHZiJz5qpnb8cMTN3R_3j_pbKlNODR3iggZhSF9VaKjjWNRle6DVkqGMBOlo0YyoTbW7vjX/pub?gid=0&single=true&output=csv";
 
-    let allRows = [];
-    let dataTable = null;
-
-    // read query params (for sharable links)
+    let allRows = []; let dataTable = null;
     const params = new URLSearchParams(location.search);
-    const qThreshold = params.get('max');
-    const qSet = params.get('set');
 
-    Papa.parse(CSV_URL, {
-      download: true,
-      header: true,
-      skipEmptyLines: 'greedy',
-      complete: (res) => {
-        allRows = res.data
-          .filter(r => r && r["Card Name"])
-          .map(r => ({
-            set: String(r["Set Name"]).trim(),
-            card: String(r["Card Name"]).trim(),
-            main: Number(r["Main Deck"]) || 0,
-            side: Number(r["Sideboard"]) || 0,
-            total: Number(r["Total"]) || 0,
-          }));
-
-        const maxTotal = allRows.reduce((m, r) => Math.max(m, r.total), 0);
-        const initial = clampNumber(qThreshold ? Number(qThreshold) : Math.min(50, maxTotal), 0, maxTotal);
-
-        initUI(maxTotal, initial);
-        populateSetFilter(allRows.map(r => r.set));
-        renderTable(initial, qSet);
-
-        const uniques = new Set(allRows.map(r => `${r.set}||${r.card}`)).size;
-        document.getElementById('meta').textContent =
-          `Loaded ${allRows.length.toLocaleString()} rows (${uniques.toLocaleString()} unique cards). Max Total = ${maxTotal.toLocaleString()}.`;
-        document.getElementById('lastUpdated').innerHTML =
-          `⏱️ <b>Last updated:</b> ${new Date().toLocaleString()}`;
-      },
-      error: (err) => {
-        document.getElementById('meta').textContent = `Error loading CSV: ${err}`;
-      }
+    // ensure libs are ready (because of defer)
+    window.addEventListener('DOMContentLoaded', () => {
+      boot();
     });
+
+    function showErr(msg){
+      console.error(msg);
+      const el = document.getElementById('err');
+      el.style.display = 'block';
+      el.textContent = typeof msg === 'string' ? msg : (msg && msg.message ? msg.message : JSON.stringify(msg));
+    }
+
+    function boot(){
+      try {
+        Papa.parse(CSV_URL, {
+          download: true,
+          header: true,
+          skipEmptyLines: 'greedy',
+          complete: onCSV,
+          error: (err) => { showErr('CSV load error: '+err); fallbackFetch(); }
+        });
+      } catch(e){
+        showErr('Papa.parse threw: '+ e);
+        fallbackFetch();
+      }
+    }
+
+    // Fallback if Papa fails (rare, but useful for diagnosis)
+    function fallbackFetch(){
+      fetch(CSV_URL).then(r=>r.text()).then(csv => {
+        const res = Papa.parse(csv, {header:true, skipEmptyLines:'greedy'});
+        onCSV(res);
+      }).catch(err => showErr('Fetch fallback failed: '+err));
+    }
+
+    function onCSV(res){
+      if (!res || !res.data) { showErr('No data parsed from CSV.'); return; }
+      allRows = res.data
+        .filter(r => r && r["Card Name"]) // drop empties & header repeats
+        .map(r => ({
+          set: String(r["Set Name"]).trim(),
+          card: String(r["Card Name"]).trim(),
+          main: Number(r["Main Deck"]) || 0,
+          side: Number(r["Sideboard"]) || 0,
+          total: Number(r["Total"]) || 0,
+        }));
+
+      const maxTotal = allRows.reduce((m, r) => Math.max(m, r.total), 0);
+      const qThreshold = params.get('max');
+      const qSet = params.get('set');
+      const initial = clampNumber(qThreshold ? Number(qThreshold) : Math.min(50, maxTotal), 0, maxTotal);
+
+      initUI(maxTotal, initial);
+      populateSetFilter(allRows.map(r => r.set));
+      renderTable(initial, qSet);
+
+      const uniques = new Set(allRows.map(r => `${r.set}||${r.card}`)).size;
+      document.getElementById('meta').textContent = `Loaded ${allRows.length.toLocaleString()} rows (${uniques.toLocaleString()} unique cards). Max Total = ${maxTotal.toLocaleString()}.`;
+      document.getElementById('lastUpdated').innerHTML = `⏱️ <b>Last updated:</b> ${new Date().toLocaleString()}`;
+    }
 
     function clampNumber(v, min, max){ return Math.max(min, Math.min(max, v)); }
 
@@ -274,21 +217,16 @@
       const slider = document.getElementById('threshold');
       const box = document.getElementById('thresholdNumber');
       const label = document.getElementById('thresholdLabel');
-      slider.max = String(maxTotal);
-      box.max = String(maxTotal);
-      slider.value = String(initial);
-      box.value = String(initial);
+      slider.max = String(maxTotal); box.max = String(maxTotal);
+      slider.value = String(initial); box.value = String(initial);
       label.textContent = initial.toLocaleString();
 
       const sync = (val) => {
         const v = clampNumber(Number(val)||0, 0, Number(slider.max));
-        slider.value = String(v);
-        box.value = String(v);
-        label.textContent = v.toLocaleString();
+        slider.value = String(v); box.value = String(v); label.textContent = v.toLocaleString();
         renderTable(v, document.getElementById('setFilter').value || "");
         updateQuery(v, document.getElementById('setFilter').value || "");
       };
-
       slider.addEventListener('input', e => sync(e.target.value));
       box.addEventListener('input',   e => sync(e.target.value));
 
@@ -305,11 +243,8 @@
     function populateSetFilter(sets){
       const sel = document.getElementById('setFilter');
       const uniq = Array.from(new Set(sets)).sort((a,b)=>a.localeCompare(b));
-      uniq.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s; opt.textContent = s; sel.appendChild(opt);
-      });
-      if (params.get('set')) sel.value = params.get('set');
+      uniq.forEach(s => { const opt = document.createElement('option'); opt.value = s; opt.textContent = s; sel.appendChild(opt); });
+      const qSet = params.get('set'); if (qSet) sel.value = qSet;
     }
 
     function renderTable(threshold, setFilter){
@@ -318,7 +253,10 @@
 
       if (dataTable){ dataTable.clear().rows.add(data).draw(); return; }
 
-      dataTable = $('#jankTable').DataTable({
+      // Ensure jQuery & DataTables exist
+      if (!window.jQuery || !jQuery.fn || !jQuery.fn.DataTable){ showErr('DataTables failed to load. Check CDN availability.'); return; }
+
+      dataTable = jQuery('#jankTable').DataTable({
         data,
         columns: [
           { title: 'Set Name' },
@@ -330,7 +268,7 @@
         order: [[4, 'asc'], [0, 'asc'], [1, 'asc']],
         pageLength: 25,
         deferRender: true,
-        dom: 'tip' // table + info + pagination
+        dom: 'tip'
       });
     }
 
@@ -341,10 +279,8 @@
       const header = ['Set Name','Card Name','Main Deck','Sideboard','Total'];
       const lines = [header.join(',')].concat(rows.map(r => [r.set, r.card, r.main, r.side, r.total].join(',')));
       const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `4HM-jank-threshold-${v}${set?`-${set.replace(/\s+/g,'_')}`:''}.csv`;
-      a.click();
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = `4HM-jank-threshold-${v}${set?`-${set.replace(/\s+/g,'_')}`:''}.csv`; a.click();
     }
 
     function updateQuery(max, set){
@@ -355,12 +291,8 @@
     }
 
     async function copySharableLink(){
-      try {
-        await navigator.clipboard.writeText(location.href);
-        alert('Sharable link copied to clipboard!');
-      } catch(e){
-        alert('Copy failed. You can manually copy the URL from the address bar.');
-      }
+      try { await navigator.clipboard.writeText(location.href); alert('Sharable link copied to clipboard!'); }
+      catch(e){ alert('Copy failed. You can manually copy the URL from the address bar.'); }
     }
   </script>
 </body>
