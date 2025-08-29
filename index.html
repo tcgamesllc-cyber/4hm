@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>4HM Jank‑O‑Meter</title>
+  <title>4HM Jank-O-Meter</title>
 
   <!-- Data + table libs -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -12,31 +12,149 @@
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
   <style>
-    :root { --bg:#0b1020; --card:#101631; --ink:#e8ecff; --muted:#9aa4c7; --brand:#66e0a3; }
-    html,body { margin:0; padding:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial; }
-    header { text-align:center; padding:28px 16px 8px; }
-    h1 { margin:0 0 6px; font-size:28px; letter-spacing:.2px; }
-    .sub { color:var(--muted); font-size:14px; }
-    .wrap { max-width:1100px; margin:20px auto 60px; padding:0 16px; }
+    :root { --bg:#fdf6e3; --card:#f9f2dd; --ink:#2b1a08; --muted:#7c6a4c; --brand:#b63; }
+    html,body {
+      margin:0; padding:0;
+      background:#fdf6e3;
+      color:var(--ink);
+      font:16px/1.5 "Book Antiqua", Palatino, serif;
+      background-image: radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
+      border:40px solid transparent;
+      border-image: url('https://i.imgur.com/vK5wZyH.png') 100 repeat; /* parchment scroll texture */
+      min-height:100vh;
+      box-sizing:border-box;
+    }
+
+    /* Watermark logo */
+    body::after {
+      content:"";
+      position:fixed;
+      top:50%; left:50%;
+      transform:translate(-50%, -50%);
+      width:600px; height:600px;
+      background:url('https://i.imgur.com/Vl8m6rM.png') no-repeat center/contain; /* placeholder 4HM logo */
+      opacity:0.07;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    /* Header parchment scroll */
+    header {
+      background:#fdf6e3;
+      background-image:radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
+      border-bottom:4px solid #d6b87a;
+      border-top:4px solid #d6b87a;
+      box-shadow:0 4px 12px rgba(0,0,0,0.4);
+      padding:24px 16px;
+      text-align:center;
+      font-family:"Book Antiqua", Palatino, serif;
+      position:relative;
+      z-index:1;
+    }
+    header h1 {
+      margin:0;
+      font-size:32px;
+      color:#3a240a;
+      text-shadow:1px 1px 0 #fff;
+    }
+    header .sub {
+      margin-top:6px;
+      font-size:15px;
+      color:#5a3816;
+    }
+
+    .wrap { max-width:1100px; margin:20px auto 60px; padding:0 16px; position:relative; z-index:1; }
     .panel { background:var(--card); border-radius:16px; padding:18px; box-shadow:0 6px 20px rgba(0,0,0,.25); }
     .controls { display:grid; gap:12px; grid-template-columns: 1fr; align-items:center; }
     .row { display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
-    .pill { background:#0f1b3d; border:1px solid #26346a; color:var(--ink); padding:8px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:10px; }
-    input[type="range"] { width:260px; }
+    .pill { background:#f2e6c6; border:1px solid #c8a96c; color:var(--ink); padding:8px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:10px; }
+
+    /* Brass slider + number input */
+    input[type="range"] {
+      -webkit-appearance:none;
+      width:260px;
+      height:8px;
+      border-radius:5px;
+      background:linear-gradient(to right, #d6b87a, #b38b4d);
+      outline:none;
+      margin:0 8px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance:none;
+      width:20px; height:20px;
+      border-radius:50%;
+      background:#8b5a2b;
+      border:2px solid #5c3b16;
+      box-shadow:inset 0 0 4px #d6b87a;
+      cursor:pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width:20px; height:20px;
+      border-radius:50%;
+      background:#8b5a2b;
+      border:2px solid #5c3b16;
+      box-shadow:inset 0 0 4px #d6b87a;
+      cursor:pointer;
+    }
+
+    #thresholdNumber {
+      width:90px;
+      background:#fff9e6;
+      color:#2b1a08;
+      border:2px solid #c8a96c;
+      border-radius:8px;
+      padding:6px 8px;
+      font-family:'Book Antiqua', Palatino, serif;
+      box-shadow:inset 0 0 5px #d6b87a;
+    }
+
     .muted { color:var(--muted); font-size:13px; }
-    .kpi { font-weight:700; color:var(--brand); }
+    .kpi { font-weight:700; color:#8b4513; }
     .actions { margin-left:auto; display:flex; gap:10px; }
-    .btn { background:transparent; border:1px solid #2a3b7d; color:var(--ink); padding:8px 12px; border-radius:10px; cursor:pointer; }
-    .btn:hover { border-color:#3f56b5; }
-    table.dataTable thead th { background:#0f1b3d; color:var(--ink); }
-    table.dataTable tbody tr:nth-child(even) { background:#0c142e; }
-    table.dataTable tbody tr:nth-child(odd) { background:#0a1130; }
-    a, a:visited { color:#94b7ff; }
+    .btn { background:#fdf6e3; border:1px solid #c8a96c; color:#3a240a; padding:8px 12px; border-radius:10px; cursor:pointer; font-family:"Book Antiqua", Palatino, serif; }
+    .btn:hover { background:#f8edd4; }
+
+    /* Table parchment skin */
+    table.dataTable {
+      background:#fdf6e3;
+      border:2px solid #d6b87a;
+      border-radius:12px;
+      overflow:hidden;
+    }
+    table.dataTable thead th {
+      background:#f2e6c6;
+      color:#3a240a;
+      font-weight:bold;
+      border-bottom:2px solid #d6b87a;
+    }
+    table.dataTable tbody tr:nth-child(even) { background:#fbf2de; }
+    table.dataTable tbody tr:nth-child(odd) { background:#f6ebd2; }
+    table.dataTable tbody td { color:#2b1a08; }
+    
+    a, a:visited { color:#7a3e00; }
+
+    /* Old-school parchment styling for About box */
+    #about {
+      margin-top:20px;
+      font-size:14px;
+      line-height:1.5;
+      color:#2b1a08;
+      background:#fdf6e3;
+      border:2px solid #d6b87a;
+      border-radius:12px;
+      padding:16px;
+      box-shadow:inset 0 0 12px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.25);
+      font-family:"Book Antiqua", Palatino, serif;
+      background-image:radial-gradient(circle at top left, #fff9e6, #fdf6e3 60%, #f3e4c1);
+    }
+    #about b { color:#3a240a; }
+    #about a { color:#7a3e00; font-weight:600; }
+    #about a:hover { color:#a75500; }
   </style>
 </head>
 <body>
   <header>
-    <h1>⚡ 4HM Jank‑O‑Meter</h1>
+    <h1>⚡ 4HM Jank-O-Meter ⚡</h1>
     <div class="sub">Slide to set a maximum <b>Total Appearances</b>. Cards at or below the threshold are tagged as <i>Jank</i> (rarely used).</div>
   </header>
 
@@ -47,11 +165,11 @@
           <div class="pill">
             <span>Threshold ≤ <span id="thresholdLabel" class="kpi">…</span></span>
             <input id="threshold" type="range" min="0" max="100" value="50" step="1" />
-            <input id="thresholdNumber" type="number" min="0" max="100" value="50" step="1" style="width:90px; background:#0b1534; color:var(--ink); border:1px solid #2a3b7d; border-radius:8px; padding:6px 8px;" />
+            <input id="thresholdNumber" type="number" min="0" max="100" value="50" step="1" />
           </div>
           <div class="pill">
             <label for="setFilter" class="muted">Filter by Set:</label>
-            <select id="setFilter" style="background:#0b1534; color:var(--ink); border:1px solid #2a3b7d; border-radius:8px; padding:6px 8px;">
+            <select id="setFilter" style="background:#fff9e6; color:#2b1a08; border:1px solid #c8a96c; border-radius:8px; padding:6px 8px; font-family:'Book Antiqua', Palatino, serif;">
               <option value="">All Sets</option>
             </select>
           </div>
@@ -77,17 +195,20 @@
         </thead>
         <tbody></tbody>
       </table>
+      <div id="about">
+        <p><b>About Jank-O-Meter:</b> This tool defines <i>Jank</i> as any legal 4HM card that has appeared in tournament decks fewer times than the chosen threshold. Adjust the slider to reveal the deepest jank of the format.</p>
+        <p>📊 <b>Data Source:</b> <a href="https://docs.google.com/spreadsheets/d/1hrPpYnM7QcIL8IEz03ZZn0cUiRIAtAaBIRk1g6ru-1s/edit?usp=sharing" target="_blank">4HM Tournament Card Usage Sheet</a> (Google Sheets, live CSV).</p>
+        <p id="lastUpdated">⏱️ <b>Last updated:</b> …</p>
+      </div>
     </div>
   </div>
 
   <script>
-    // LIVE CSV published from Google Sheets (provided by you)
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8EjG79BHZiJz5qpnb8cMTN3R_3j_pbKlNODR3iggZhSF9VaKjjWNRle6DVkqGMBOlo0YyoTbW7vjX/pub?gid=0&single=true&output=csv";
 
     let allRows = [];
     let dataTable = null;
 
-    // Parse query params for threshold and set filter (for sharable links)
     const params = new URLSearchParams(location.search);
     const qThreshold = params.get('max');
     const qSet = params.get('set');
@@ -97,9 +218,8 @@
       header: true,
       skipEmptyLines: 'greedy',
       complete: (res) => {
-        // Clean and coerce types
         allRows = res.data
-          .filter(r => r && r["Card Name"]) // drop header repeats/empties
+          .filter(r => r && r["Card Name"])
           .map(r => ({
             set: String(r["Set Name"]).trim(),
             card: String(r["Card Name"]).trim(),
@@ -115,9 +235,9 @@
         populateSetFilter(allRows.map(r => r.set));
         renderTable(initial, qSet);
 
-        // Meta info
         const uniques = new Set(allRows.map(r => `${r.set}||${r.card}`)).size;
         document.getElementById('meta').textContent = `Loaded ${allRows.length.toLocaleString()} rows (${uniques.toLocaleString()} unique cards). Max Total = ${maxTotal.toLocaleString()}.`;
+        document.getElementById('lastUpdated').innerHTML = `⏱️ <b>Last updated:</b> ${new Date().toLocaleString()}`;
       },
       error: (err) => {
         document.getElementById('meta').textContent = `Error loading CSV: ${err}`;
@@ -186,7 +306,7 @@
         order: [[4, 'asc'], [0, 'asc'], [1, 'asc']],
         pageLength: 25,
         deferRender: true,
-        dom: 'tip', // simple: table + info + pagination
+        dom: 'tip',
       });
     }
 
@@ -199,21 +319,4 @@
       const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `4HM-jank-threshold-${v}${set?`-${set.replace(/\s+/g,'_')}`:''}.csv`;
-      a.click();
-    }
-
-    function updateQuery(max, set){
-      const url = new URL(location.href);
-      if (max != null) url.searchParams.set('max', String(max));
-      if (set) url.searchParams.set('set', set); else url.searchParams.delete('set');
-      history.replaceState(null, '', url);
-    }
-
-    async function copySharableLink(){
-      try { await navigator.clipboard.writeText(location.href); alert('Sharable link copied to clipboard!'); }
-      catch(e){ alert('Copy failed. You can manually copy the URL from the address bar.'); }
-    }
-  </script>
-</body>
-</html>
+      a.download = `4HM-jank-threshold-${v}${set?`-${set.replace(/\s+/g
