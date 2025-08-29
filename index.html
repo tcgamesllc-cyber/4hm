@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>4HM Jank‑O‑Meter</title>
+
+  <!-- Data + table libs -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+  <style>
+    :root { --bg:#0b1020; --card:#101631; --ink:#e8ecff; --muted:#9aa4c7; --brand:#66e0a3; }
+    html,body { margin:0; padding:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial; }
+    header { text-align:center; padding:28px 16px 8px; }
+    h1 { margin:0 0 6px; font-size:28px; letter-spacing:.2px; }
+    .sub { color:var(--muted); font-size:14px; }
+    .wrap { max-width:1100px; margin:20px auto 60px; padding:0 16px; }
+    .panel { background:var(--card); border-radius:16px; padding:18px; box-shadow:0 6px 20px rgba(0,0,0,.25); }
+    .controls { display:grid; gap:12px; grid-template-columns: 1fr; align-items:center; }
+    .row { display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+    .pill { background:#0f1b3d; border:1px solid #26346a; color:var(--ink); padding:8px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:10px; }
+    input[type="range"] { width:260px; }
+    .muted { color:var(--muted); font-size:13px; }
+    .kpi { font-weight:700; color:var(--brand); }
+    .actions { margin-left:auto; display:flex; gap:10px; }
+    .btn { background:transparent; border:1px solid #2a3b7d; color:var(--ink); padding:8px 12px; border-radius:10px; cursor:pointer; }
+    .btn:hover { border-color:#3f56b5; }
+    table.dataTable thead th { background:#0f1b3d; color:var(--ink); }
+    table.dataTable tbody tr:nth-child(even) { background:#0c142e; }
+    table.dataTable tbody tr:nth-child(odd) { background:#0a1130; }
+    a, a:visited { color:#94b7ff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⚡ 4HM Jank‑O‑Meter</h1>
+    <div class="sub">Slide to set a maximum <b>Total Appearances</b>. Cards at or below the threshold are tagged as <i>Jank</i> (rarely used).</div>
+  </header>
+
+  <div class="wrap">
+    <div class="panel">
+      <div class="controls">
+        <div class="row">
+          <div class="pill">
+            <span>Threshold ≤ <span id="thresholdLabel" class="kpi">…</span></span>
+            <input id="threshold" type="range" min="0" max="100" value="50" step="1" />
+            <input id="thresholdNumber" type="number" min="0" max="100" value="50" step="1" style="width:90px; background:#0b1534; color:var(--ink); border:1px solid #2a3b7d; border-radius:8px; padding:6px 8px;" />
+          </div>
+          <div class="pill">
+            <label for="setFilter" class="muted">Filter by Set:</label>
+            <select id="setFilter" style="background:#0b1534; color:var(--ink); border:1px solid #2a3b7d; border-radius:8px; padding:6px 8px;">
+              <option value="">All Sets</option>
+            </select>
+          </div>
+          <div class="actions">
+            <button id="exportBtn" class="btn">Export CSV</button>
+            <button id="copyLinkBtn" class="btn">Copy Sharable Link</button>
+          </div>
+        </div>
+        <div class="muted" id="meta">Loading data…</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <table id="jankTable" class="display" style="width:100%">
+        <thead>
+          <tr>
+            <th>Set Name</th>
+            <th>Card Name</th>
+            <th>Main Deck</th>
+            <th>Sideboard</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // LIVE CSV published from Google Sheets (provided by you)
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8EjG79BHZiJz5qpnb8cMTN3R_3j_pbKlNODR3iggZhSF9VaKjjWNRle6DVkqGMBOlo0YyoTbW7vjX/pub?gid=0&single=true&output=csv";
+
+    let allRows = [];
+    let dataTable = null;
+
+    // Parse query params for threshold and set filter (for sharable links)
+    const params = new URLSearchParams(location.search);
+    const qThreshold = params.get('max');
+    const qSet = params.get('set');
+
+    Papa.parse(CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: 'greedy',
+      complete: (res) => {
+        // Clean and coerce types
+        allRows = res.data
+          .filter(r => r && r["Card Name"]) // drop header repeats/empties
+          .map(r => ({
+            set: String(r["Set Name"]).trim(),
+            card: String(r["Card Name"]).trim(),
+            main: Number(r["Main Deck"]) || 0,
+            side: Number(r["Sideboard"]) || 0,
+            total: Number(r["Total"]) || 0,
+          }));
+
+        const maxTotal = allRows.reduce((m, r) => Math.max(m, r.total), 0);
+        const initial = clampNumber(qThreshold ? Number(qThreshold) : Math.min(50, maxTotal), 0, maxTotal);
+
+        initUI(maxTotal, initial);
+        populateSetFilter(allRows.map(r => r.set));
+        renderTable(initial, qSet);
+
+        // Meta info
+        const uniques = new Set(allRows.map(r => `${r.set}||${r.card}`)).size;
+        document.getElementById('meta').textContent = `Loaded ${allRows.length.toLocaleString()} rows (${uniques.toLocaleString()} unique cards). Max Total = ${maxTotal.toLocaleString()}.`;
+      },
+      error: (err) => {
+        document.getElementById('meta').textContent = `Error loading CSV: ${err}`;
+      }
+    });
+
+    function clampNumber(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+    function initUI(maxTotal, initial){
+      const slider = document.getElementById('threshold');
+      const box = document.getElementById('thresholdNumber');
+      const label = document.getElementById('thresholdLabel');
+      slider.max = String(maxTotal);
+      box.max = String(maxTotal);
+      slider.value = String(initial);
+      box.value = String(initial);
+      label.textContent = initial.toLocaleString();
+
+      const sync = (val) => {
+        const v = clampNumber(Number(val)||0, 0, Number(slider.max));
+        slider.value = String(v);
+        box.value = String(v);
+        label.textContent = v.toLocaleString();
+        renderTable(v, document.getElementById('setFilter').value || "");
+        updateQuery(v, document.getElementById('setFilter').value || "");
+      };
+
+      slider.addEventListener('input', e => sync(e.target.value));
+      box.addEventListener('input', e => sync(e.target.value));
+
+      document.getElementById('setFilter').addEventListener('change', () => {
+        const v = Number(slider.value);
+        renderTable(v, document.getElementById('setFilter').value || "");
+        updateQuery(v, document.getElementById('setFilter').value || "");
+      });
+
+      document.getElementById('exportBtn').addEventListener('click', exportCSV);
+      document.getElementById('copyLinkBtn').addEventListener('click', copySharableLink);
+    }
+
+    function populateSetFilter(sets){
+      const sel = document.getElementById('setFilter');
+      const uniq = Array.from(new Set(sets)).sort((a,b)=>a.localeCompare(b));
+      uniq.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s; opt.textContent = s; sel.appendChild(opt);
+      });
+      if (qSet) sel.value = qSet;
+    }
+
+    function renderTable(threshold, setFilter){
+      const rows = allRows.filter(r => r.total <= threshold && (!setFilter || r.set === setFilter));
+      const data = rows.map(r => [r.set, r.card, r.main, r.side, r.total]);
+
+      if (dataTable){ dataTable.clear().rows.add(data).draw(); return; }
+
+      dataTable = $('#jankTable').DataTable({
+        data,
+        columns: [
+          { title: 'Set Name' },
+          { title: 'Card Name' },
+          { title: 'Main Deck' },
+          { title: 'Sideboard' },
+          { title: 'Total' }
+        ],
+        order: [[4, 'asc'], [0, 'asc'], [1, 'asc']],
+        pageLength: 25,
+        deferRender: true,
+        dom: 'tip', // simple: table + info + pagination
+      });
+    }
+
+    function exportCSV(){
+      const v = Number(document.getElementById('threshold').value);
+      const set = document.getElementById('setFilter').value || '';
+      const rows = allRows.filter(r => r.total <= v && (!set || r.set === set));
+      const header = ['Set Name','Card Name','Main Deck','Sideboard','Total'];
+      const lines = [header.join(',')].concat(rows.map(r => [r.set, r.card, r.main, r.side, r.total].join(',')));
+      const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `4HM-jank-threshold-${v}${set?`-${set.replace(/\s+/g,'_')}`:''}.csv`;
+      a.click();
+    }
+
+    function updateQuery(max, set){
+      const url = new URL(location.href);
+      if (max != null) url.searchParams.set('max', String(max));
+      if (set) url.searchParams.set('set', set); else url.searchParams.delete('set');
+      history.replaceState(null, '', url);
+    }
+
+    async function copySharableLink(){
+      try { await navigator.clipboard.writeText(location.href); alert('Sharable link copied to clipboard!'); }
+      catch(e){ alert('Copy failed. You can manually copy the URL from the address bar.'); }
+    }
+  </script>
+</body>
+</html>
