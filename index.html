@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>4HM Jank-O-Meter (Self‑Contained)</title>
+  <title>4HM Jank-O-Meter (Self‑Contained, Mobile)</title>
 
-  <!-- Data & table libs (use defer to avoid race conditions) -->
+  <!-- Data & table libs (defer to avoid race conditions) -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" defer crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
@@ -91,6 +91,30 @@
 
     /* === Inline error banner (for quick diagnosis) === */
     #err { display:none; margin-top:12px; padding:10px 12px; border-radius:10px; background:#ffe6e6; color:#7a0000; border:1px solid #d88; }
+
+    /* === Mobile polish === */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #jankTable { table-layout: fixed; }
+    #jankTable th, #jankTable td { white-space: normal; word-break: break-word; }
+
+    @media (max-width: 640px) {
+      body { border-width: 16px; }             /* thinner parchment frame */
+      header h1 { font-size: 24px; }
+      header .sub { font-size: 13px; }
+      .wrap { padding: 0 8px; }
+      .panel { border-radius: 12px; padding: 12px; }
+      .pill { padding: 6px 8px; }
+      input[type="range"] { width: 100%; }    /* slider stretches on mobile */
+      #thresholdNumber { width: 72px; }
+      table.dataTable { border-width: 1px; }
+      table.dataTable thead th { font-size: 14px; }
+      table.dataTable tbody td { font-size: 14px; }
+    }
+    @media (max-width: 380px) {
+      body { border-width: 10px; }
+      header h1 { font-size: 20px; }
+      .pill { border-radius: 14px; }
+    }
   </style>
 </head>
 <body>
@@ -125,18 +149,20 @@
     </div>
 
     <div class="panel" style="margin-top:16px;">
-      <table id="jankTable" class="display" style="width:100%">
-        <thead>
-          <tr>
-            <th>Set Name</th>
-            <th>Card Name</th>
-            <th>Main Deck</th>
-            <th>Sideboard</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-wrap">
+        <table id="jankTable" class="display" style="width:100%">
+          <thead>
+            <tr>
+              <th>Set Name</th>
+              <th>Card Name</th>
+              <th>Main Deck</th>
+              <th>Sideboard</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
 
       <div id="about">
         <p><b>About Jank-O-Meter:</b> This tool defines <i>Jank</i> as any legal 4HM card that has appeared in tournament decks fewer times than the chosen threshold. Adjust the slider to reveal the deepest jank of the format.</p>
