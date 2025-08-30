@@ -169,7 +169,16 @@
       <div class="grid">
         <div>
           <label for="deckInput" class="muted">Paste your Tolaria/ManaStack/Moxfield‑style list here (sideboard optional):</label>
-          <textarea id="deckInput" placeholder="e.g. \n\n3 Sword of the Ages\n1 Sylvan Library\n1 Vaevictis Asmadi\n...            \n\nSIDEBOARD:\n1 Bazaar of Baghdad\n3 Crumble\n..."></textarea>
+          <textarea id="deckInput" placeholder="e.g. 
+            3 Sword of the Ages 
+1 Sylvan Library 
+1 Vaevictis Asmadi
+            ...
+
+SIDEBOARD:
+1 Bazaar of Baghdad 
+3 Crumble
+            ..."></textarea>
           <div class="small">or <input type="file" id="deckFile" accept=".txt,.dek,.dec"/> <button id="analyzeBtn" class="btn">Analyze Deck</button>
             <label style="margin-left:8px;"><input type="checkbox" id="includeSb"/> Include sideboard in score</label>
           </div>
@@ -305,7 +314,7 @@
     function renderDeckScore(r){
       const scoreEl = document.getElementById('scoreValue'); const bar = document.getElementById('scoreBar'); const flavor = document.getElementById('scoreFlavor'); const badges = document.getElementById('badges'); const top = document.getElementById('topJank'); const notes = document.getElementById('notes');
       scoreEl.textContent = r.score; bar.style.width = r.score + '%';
-      let msg = ''; if (r.score >= 90) msg = '🌋 The Jank is STRONG with this one.'; else if (r.score >= 70) msg = '🧪 Maximum spice achieved — expect the unexpected.'; else if (r.score >= 50) msg = '🌶️ Solidly spicy — a connoisseur’s brew.'; else if (r.score >= 30) msg = '🧯 Respectable heat with room to get weird.'; else msg = '🛡️ More staple than spice. Dare to jank harder?'; if (r.bonus >= 15) msg += ' 🧪 Dense spice pocket detected.'; flavor.textContent = msg;
+      let msg = ''; if (r.score >= 90) msg = '🧪 Maximum spice achieved — expect the unexpected.'; else if (r.score >= 70) msg = '🌋 The Jank is STRONG with this one.'; else if (r.score >= 50) msg = '🌶️ Solidly spicy — a connoisseur’s brew.'; else if (r.score >= 30) msg = '🧯 Respectable heat with room to get weird.'; else msg = '🛡️ More staple than spice. Dare to jank harder?'; if (r.bonus >= 15) msg += ' 🧪 Dense spice pocket detected.'; flavor.textContent = msg;
       badges.innerHTML = `
         <div class="small">🧿 <b>Ultra‑jank</b> (≤${THRESH_ULTRA} Total): <b>${r.distinctUltra}</b></div>
         <div class="small">💀 <b>Deep‑jank</b> (≤${THRESH_DEEP} Total): <b>${r.distinctDeep}</b></div>
